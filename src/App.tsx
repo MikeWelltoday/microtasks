@@ -1,53 +1,106 @@
 import React, {useState} from 'react'
 import './App.css'
-import {FullInput} from './components/fullInput/FullInput'
-import {Input} from './components/inputWithButton/Input'
-import {Button} from './components/inputWithButton/Button'
+import {TaskType, Todolist} from './components/Todolist'
+import {v1} from 'uuid'
 
-//===============================================================================================================================================================
+//===========================================================================================
 
-type message = { message: string }
+export type FilterValuesType = 'all' | 'active' | 'completed';
 
-//===============================================================================================================================================================
+type TodolistType = {
+    id: string
+    title: string
+    filter: FilterValuesType
+}
+
+type TasksType = {
+    [key: string]: TaskType[]
+}
+
+//===========================================================================================
 
 function App() {
-    const [messages, setMessages] = useState<message[]>([
-        {message: 'message1'},
-        {message: 'message2'},
-        {message: 'message3'}
+
+
+    let todolistID1 = v1()
+    let todolistID2 = v1()
+
+    let [todolists, setTodolists] = useState<Array<TodolistType>>([
+        {id: todolistID1, title: 'What to learn', filter: 'all'},
+        {id: todolistID2, title: 'What to buy', filter: 'all'}
     ])
 
-    //--------------------------------------------------------------------------------------
-    // fullInput
+    let [tasks, setTasks] = useState<TasksType>({
+        [todolistID1]: [
+            {id: v1(), title: 'HTML&CSS', isDone: true},
+            {id: v1(), title: 'JS', isDone: true},
+            {id: v1(), title: 'ReactJS', isDone: false},
+            {id: v1(), title: 'Rest API', isDone: false},
+            {id: v1(), title: 'GraphQL', isDone: false}
+        ],
+        [todolistID2]: [
+            {id: v1(), title: 'Milk', isDone: true},
+            {id: v1(), title: 'Bread', isDone: false}
 
-    function addMessage(message: string) {
-        setMessages([{message: message}, ...messages])
+        ]
+    })
+    const [filter, setFilter] = useState<FilterValuesType>('all')
+
+    function addTask(title: string, todolistId: string) {
+        tasks[todolistId] = [{id: v1(), title: title, isDone: false}, ...tasks[todolistId]]
+        setTasks({...tasks})
     }
 
-    //--------------------------------------------------------------------------------------
-    // inputWithButton
-
-    const [title, setTitle] = useState<string>('')
-
-    function addMessageWithOnlyInput() {
-        setMessages([{message: title}, ...messages])
-        setTitle('')
+    function removeTask(taskId: string, todolistId: string) {
+        tasks[todolistId] = tasks[todolistId].filter(item => item.id !== taskId)
+        setTasks({...tasks})
     }
 
-    //--------------------------------------------------------------------------------------
+    function changeTaskStatus(taskId: string, isDone: boolean, todolistId: string) {
+        const task = tasks[todolistId].find(item => item.id === taskId)
+        if (task) {
+            task.isDone = isDone
+            setTasks({...tasks})
+        }
+    }
+
+    function changeTaskFilter(value: FilterValuesType, todolistId: string) {
+        const todolist = todolists.find(item => item.id === todolistId)
+        if (todolist) {
+            todolist.filter = value
+            setTodolists([...todolists])
+            console.log(todolist)
+        }
+    }
 
     return (
-        <div className={'App'}>
-            <FullInput addMessage={addMessage}/>
-            <Input title={title} setTitle={setTitle} callBack={addMessageWithOnlyInput}/>
-            <Button callBack={addMessageWithOnlyInput} name={'+'}/>
-            {messages.map((item, index) => <div key={index}>{item.message}</div>)}
+        <div className="App">
+
+            {todolists.map(todolist => {
+
+                let filteredTasks = tasks[todolist.id]
+                if (todolist.filter === 'active') filteredTasks = filteredTasks.filter(t => !t.isDone)
+                if (todolist.filter === 'completed') filteredTasks = filteredTasks.filter(t => t.isDone)
+
+                return (
+
+                    <Todolist key={todolist.id}
+                              todolistId={todolist.id}
+                              todolistTitle={todolist.title}
+                              filteredTasks={filteredTasks}
+                              todolistTaskFilter={todolist.filter}
+                              addTask={addTask}
+                              removeTask={removeTask}
+                              changeTaskFilter={changeTaskFilter}
+                              changeTaskStatus={changeTaskStatus}
+
+                    />
+
+                )
+            })}
+
         </div>
     )
 }
 
 export default App
-
-
-
-
